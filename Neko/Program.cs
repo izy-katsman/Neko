@@ -258,6 +258,7 @@ namespace Neko
                             }
                         }
                         Type = -1;
+                        isCommand = true;
                     }
 
                 }
