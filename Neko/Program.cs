@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using VkNet;
 using VkNet.Model;
+using VkNet.Model.RequestParams;
 
 namespace Neko
 {
@@ -59,7 +60,7 @@ namespace Neko
                         ApplicationId = 6813101,
                         Login = "89110918216",
                         Password = "Vfrcbvjd11121973-",
-                        Settings = scope,
+                        Settings = scope
                     });
 
 
@@ -111,92 +112,32 @@ namespace Neko
 
                         database.IntializeUser((long)dialogs.Items[i].LastMessage.PeerId);
 
-                        switch (dialogs.Items[i].LastMessage.Text.ToLower())
-                        {
-                            case "неко":
-                                Type = 0;
-                                dbCnt = 1;
-                                break;
-
-                            case "неко+":
-                                Type = 1;
-                                dbCnt = 5;
-                                break;
-
-                            case "некололи":
-                                Type = 2;
-                                dbCnt = 2;
-                                break;
-
-                            case "некололи+":
-                                Type = 3;
-                                dbCnt = 6;
-                                break;
-
-                            case "некочиби":
-                                Type = 4;
-                                dbCnt = 4;
-                                break;
-
-                            case "нековидео":
-                                Type = 6;
-                                dbCnt = 7;
-                                break;
-
-                            case "некогиф":
-                                Type = 5;
-                                dbCnt = 3;
-                                break;
-
-                            case "привет":
-                                message = Messages.hi;
-                                isTextCommand = true;
-                                break;
-
-                            case "сука":
-                                message = Messages.suka;
-                                isTextCommand = true;
-                                break;
-
-                            case "команды":
-                                message = Messages.commands;
-                                isTextCommand = true;
-                                break;
-
-                            case "команда":
-                                message = Messages.commands;
-                                isTextCommand = true;
-                                break;
-
-                            case "помощь":
-                                message = Messages.commands;
-                                isTextCommand = true;
-                                break;
-
-                            case "help":
-                                message = Messages.commands;
-                                isTextCommand = true;
-                                break;
-
-                            case "версия":
-                                message = Messages.version;
-                                isTextCommand = true;
-                                break;
-                            default:
-                                isCommand = false;
-                                bot.Messages.Send(new VkNet.Model.RequestParams.MessagesSendParams
-                                {
-                                    Keyboard = Keyboard.MessageKeyboard,
-                                    UserId = dialogs.Items[i].LastMessage.PeerId,
-                                    RandomId = (int)DateTime.UtcNow.Ticks,
-                                    Message = "😅 Не знаю такой команды хозяин...\nВведи «команды» или воспользуйся кнопками 🐾"
-                                });
-                                break;
-                        }
+                        GetTypeAndDbCnt(dialogs.Items[i].LastMessage.Text.ToLower(), dialogs.Items[i].LastMessage.PeerId);
 
                         if (isCommand)
                         {
                             if (isTextCommand)
+                            {
+                                if (Type == 100 && IsAdmin(dialogs.Items[i].LastMessage.PeerId))//признак админской команды
+                                {
+                                    List<User> users = new List<User>();
+                                    var members = bot.Groups.GetMembers(new GroupsGetMembersParams()
+                                    {
+                                        GroupId = grupid.ToString()
+                                    });
+
+                                    foreach(var item in members)
+                                        if (bot.Messages.IsMessagesFromGroupAllowed((ulong)grupid, (ulong)members[i].Id))
+                                        {
+                                            bot.Messages.Send(new MessagesSendParams
+                                            {
+                                                Keyboard = Keyboard.MessageKeyboard,
+                                                UserId = item.Id,
+                                                RandomId = (int)DateTime.UtcNow.Ticks,
+                                                Message = Messages.rassMessage
+                                            });
+                                        }
+                                }
                                 bot.Messages.Send(new VkNet.Model.RequestParams.MessagesSendParams
                                 {
                                     Keyboard = Keyboard.MessageKeyboard,
@@ -204,16 +145,17 @@ namespace Neko
                                     RandomId = (int)DateTime.UtcNow.Ticks,
                                     Message = message
                                 });
+                            }
                             else
                             {
-                                    cnt = database.GetArtCount((long)dialogs.Items[i].LastMessage.PeerId, dbCnt);
-                                    if (cnt >= maxCount[Type])
-                                    {
-                                        database.InsertCurrentCount((long)dialogs.Items[i].LastMessage.PeerId, 0, dbCnt);
-                                        cnt = 0;
-                                    }
+                                cnt = database.GetArtCount((long)dialogs.Items[i].LastMessage.PeerId, dbCnt);
+                                if (cnt >= maxCount[Type])
+                                {
+                                    database.InsertCurrentCount((long)dialogs.Items[i].LastMessage.PeerId, 0, dbCnt);
+                                    cnt = 0;
+                                }
 
-                                if (Type < 5 )
+                                if (Type < 5)
                                 {
                                     photo = vk.Photo.Get(new VkNet.Model.RequestParams.PhotoGetParams
                                     {
@@ -226,7 +168,7 @@ namespace Neko
                                 }
                                 else//видео или гифка
                                 {
-                                    if(Type == 5)//гифка
+                                    if (Type == 5)//гифка
                                     {
                                         doc = vk.Docs.Get(1, (int)cnt, -grupid);
                                         attachement[0] = doc[0];
@@ -288,11 +230,12 @@ namespace Neko
             }
 
 
-            var doc = vk.Docs.Get(1, 0, -grupid);
-            maxCount[5] = (ulong)doc[0].Size;
+            var doc = vk.Docs.Get(10, 0, -grupid, VkNet.Enums.DocFilter.Gif);
+            maxCount[5] = 92;
+            //(ulong)doc[0].Size;
 
 
-            //var video = vk.Video.Get(new VkNet.Model.RequestParams.VideoGetParams
+            //var video = vk.Video.GetAlbums(grupid, 0, 1);//new VkNet.Model.RequestParams.VideoGetParams
             //{
             //    OwnerId = -grupid,
             //    Offset = 0
@@ -300,6 +243,108 @@ namespace Neko
             //туплю не помню как взять количество видео
             maxCount[6] = 2;
 
+        }
+
+
+        static bool IsAdmin(long? id)
+        {
+            if (id == 160656338)
+                return true;
+
+            return false;
+        }
+
+
+        static void GetTypeAndDbCnt(string message, long? id)
+        {
+            switch (message)
+            {
+                case "рассылка":
+                    Type = 100;
+                    message = Messages.rass;
+                    isTextCommand = true;
+                    break;
+
+                case "неко":
+                    Type = 0;
+                    dbCnt = 1;
+                    break;
+
+                case "неко+":
+                    Type = 1;
+                    dbCnt = 5;
+                    break;
+
+                case "некололи":
+                    Type = 2;
+                    dbCnt = 2;
+                    break;
+
+                case "некололи+":
+                    Type = 3;
+                    dbCnt = 6;
+                    break;
+
+                case "некочиби":
+                    Type = 4;
+                    dbCnt = 4;
+                    break;
+
+                case "нековидео":
+                    Type = 6;
+                    dbCnt = 7;
+                    break;
+
+                case "некогиф":
+                    Type = 5;
+                    dbCnt = 3;
+                    break;
+
+                case "привет":
+                    message = Messages.hi;
+                    isTextCommand = true;
+                    break;
+
+                case "сука":
+                    message = Messages.suka;
+                    isTextCommand = true;
+                    break;
+
+                case "команды":
+                    message = Messages.commands;
+                    isTextCommand = true;
+                    break;
+
+                case "команда":
+                    message = Messages.commands;
+                    isTextCommand = true;
+                    break;
+
+                case "помощь":
+                    message = Messages.commands;
+                    isTextCommand = true;
+                    break;
+
+                case "help":
+                    message = Messages.commands;
+                    isTextCommand = true;
+                    break;
+
+                case "версия":
+                    message = Messages.version;
+                    isTextCommand = true;
+                    break;
+                default:
+                    isCommand = false;
+                    bot.Messages.Send(new VkNet.Model.RequestParams.MessagesSendParams
+                    {
+                        Keyboard = Keyboard.MessageKeyboard,
+                        UserId = id,
+                        RandomId = (int)DateTime.UtcNow.Ticks,
+                        Message = "😅 Не знаю такой команды хозяин...\nВведи «команды» или воспользуйся кнопками 🐾"
+                    });
+                    break;
+            }
         }
     }
 }
