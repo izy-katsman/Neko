@@ -235,13 +235,13 @@ namespace Neko
             //(ulong)doc[0].Size;
 
 
-            //var video = vk.Video.GetAlbums(grupid, 0, 1);//new VkNet.Model.RequestParams.VideoGetParams
+            var video = vk.Video.GetAlbums(-grupid, 0, 100, true, true);//new VkNet.Model.RequestParams.VideoGetParams
             //{
             //    OwnerId = -grupid,
             //    Offset = 0
             //});
             //туплю не помню как взять количество видео
-            maxCount[6] = 2;
+            maxCount[6] = (ulong)video[1].Count;
 
         }
 
