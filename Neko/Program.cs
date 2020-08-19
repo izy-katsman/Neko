@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using VkNet;
@@ -266,13 +267,17 @@ namespace Neko
         static void GetTypeAndDbCnt(long? id)
         {
             bool isMat = false;
-            foreach(var item in Messages.matList)
-                if(message.Contains(item))
-                {
-                    message = Messages.suka;
-                    isTextCommand = true;
-                    isMat = true;
-                }
+            Regex regex = new Regex(Messages.blackListWords);
+            MatchCollection matchesBlack = regex.Matches(message);
+
+            regex = new Regex(Messages.whiteListWords);
+            MatchCollection matchesWhite = regex.Matches(message);
+            if (matchesBlack.Count > 0 && matchesWhite.Count == 0)
+            {
+                message = Messages.suka;
+                isTextCommand = true;
+                isMat = true;
+            }
             
             if(!isMat)
                 switch (message)
