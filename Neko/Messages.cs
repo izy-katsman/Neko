@@ -1,4 +1,6 @@
-﻿namespace Neko
+﻿using System.Collections.Generic;
+
+namespace Neko
 {
     class Messages
     {
@@ -10,5 +12,14 @@
         static public readonly string version = "💾 Версия бота: 1.0.45 от 23.05.19";
         static public readonly string rass = "Начата рассылка";
         static public readonly string rassMessage = "текст рассылки";
+        static public readonly List<string> hellowList = new List<string>()
+        {
+            "Привет мой котик.", "И тебе привет!", "Привет..."
+        };
+
+        static public readonly List<string> matList = new List<string>()
+        {
+            "БЛЯДЬ", "ЕБАТЬ"
+        };
     }
 }

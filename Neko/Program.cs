@@ -106,16 +106,23 @@ namespace Neko
                     for (int i = 0; i < dialogs.UnreadCount; i++)
                     {
                         message = dialogs.Items[i].LastMessage.Text.ToLower();
-                        az = DateTime.Now.ToString() + " " + message + "\n";
+
+                        if (dialogs.Profiles[i].Sex == VkNet.Enums.Sex.Female)
+                            az = DateTime.Now.ToString() + " " + message + " писала девочка\n";
+                        if (dialogs.Profiles[i].Sex == VkNet.Enums.Sex.Male)
+                            az = DateTime.Now.ToString() + " " + message + " писал парень\n";
+
+
                         Console.WriteLine(az);
                         System.IO.File.AppendAllText(@"keyboard_log.txt", az);
 
                         database.IntializeUser((long)dialogs.Items[i].LastMessage.PeerId);
 
-                        GetTypeAndDbCnt(dialogs.Items[i].LastMessage.Text.ToLower(), dialogs.Items[i].LastMessage.PeerId);
+                        GetTypeAndDbCnt(dialogs.Items[i].LastMessage.PeerId);
 
                         if (isCommand)
                         {
+
                             if (isTextCommand)
                             {
                                 if (Type == 100 && IsAdmin(dialogs.Items[i].LastMessage.PeerId))//признак админской команды
@@ -201,6 +208,7 @@ namespace Neko
                         }
                         Type = -1;
                         isCommand = true;
+                        isTextCommand = false;
                     }
 
                 }
@@ -235,7 +243,7 @@ namespace Neko
             //(ulong)doc[0].Size;
 
 
-            var video = vk.Video.GetAlbums(-grupid, 0, 100, true, true);//new VkNet.Model.RequestParams.VideoGetParams
+            var video = vk.Video.GetAlbums(-grupid, 0, 10, true, true);//new VkNet.Model.RequestParams.VideoGetParams
             //{
             //    OwnerId = -grupid,
             //    Offset = 0
@@ -255,96 +263,109 @@ namespace Neko
         }
 
 
-        static void GetTypeAndDbCnt(string message, long? id)
+        static void GetTypeAndDbCnt(long? id)
         {
-            switch (message)
-            {
-                case "рассылка":
-                    Type = 100;
-                    message = Messages.rass;
-                    isTextCommand = true;
-                    break;
-
-                case "неко":
-                    Type = 0;
-                    dbCnt = 1;
-                    break;
-
-                case "неко+":
-                    Type = 1;
-                    dbCnt = 5;
-                    break;
-
-                case "некололи":
-                    Type = 2;
-                    dbCnt = 2;
-                    break;
-
-                case "некололи+":
-                    Type = 3;
-                    dbCnt = 6;
-                    break;
-
-                case "некочиби":
-                    Type = 4;
-                    dbCnt = 4;
-                    break;
-
-                case "нековидео":
-                    Type = 6;
-                    dbCnt = 7;
-                    break;
-
-                case "некогиф":
-                    Type = 5;
-                    dbCnt = 3;
-                    break;
-
-                case "привет":
-                    message = Messages.hi;
-                    isTextCommand = true;
-                    break;
-
-                case "сука":
+            bool isMat = false;
+            foreach(var item in Messages.matList)
+                if(message.Contains(item))
+                {
                     message = Messages.suka;
                     isTextCommand = true;
-                    break;
+                    isMat = true;
+                }
+            
+            if(!isMat)
+                switch (message)
+                {
+                    case "рассылка":
+                        Type = 100;
+                        message = Messages.rass;
+                        isTextCommand = true;
+                        break;
 
-                case "команды":
-                    message = Messages.commands;
-                    isTextCommand = true;
-                    break;
+                    case "неко":
+                        Type = 0;
+                        dbCnt = 1;
+                        break;
 
-                case "команда":
-                    message = Messages.commands;
-                    isTextCommand = true;
-                    break;
+                    case "неко+":
+                        Type = 1;
+                        dbCnt = 5;
+                        break;
 
-                case "помощь":
-                    message = Messages.commands;
-                    isTextCommand = true;
-                    break;
+                    case "некололи":
+                        Type = 2;
+                        dbCnt = 2;
+                        break;
 
-                case "help":
-                    message = Messages.commands;
-                    isTextCommand = true;
-                    break;
+                    case "некололи+":
+                        Type = 3;
+                        dbCnt = 6;
+                        break;
 
-                case "версия":
-                    message = Messages.version;
-                    isTextCommand = true;
-                    break;
-                default:
-                    isCommand = false;
-                    bot.Messages.Send(new VkNet.Model.RequestParams.MessagesSendParams
-                    {
-                        Keyboard = Keyboard.MessageKeyboard,
-                        UserId = id,
-                        RandomId = (int)DateTime.UtcNow.Ticks,
-                        Message = "😅 Не знаю такой команды хозяин...\nВведи «команды» или воспользуйся кнопками 🐾"
-                    });
-                    break;
-            }
+                    case "некочиби":
+                        Type = 4;
+                        dbCnt = 4;
+                        break;
+
+                    case "нековидео":
+                        Type = 6;
+                        dbCnt = 7;
+                        break;
+
+                    case "некогиф":
+                        Type = 5;
+                        dbCnt = 3;
+                        break;
+
+                    case "привет":
+                        Random rnd = new Random();
+                        List<long> tmp = new List<long>();
+                        tmp.Add((long)id);
+                        var user = bot.Users.Get(tmp, VkNet.Enums.Filters.ProfileFields.Sex);
+                        if (user[0].Sex == VkNet.Enums.Sex.Female)
+                            message = Messages.hellowList[rnd.Next(Messages.hellowList.Count)] + " дорогая";
+                        else
+                            message = Messages.hellowList[rnd.Next(Messages.hellowList.Count)] + " дорогой";
+                        isTextCommand = true;
+                        break;
+
+
+                    case "команды":
+                        message = Messages.commands;
+                        isTextCommand = true;
+                        break;
+
+                    case "команда":
+                        message = Messages.commands;
+                        isTextCommand = true;
+                        break;
+
+                    case "помощь":
+                        message = Messages.commands;
+                        isTextCommand = true;
+                        break;
+
+                    case "help":
+                        message = Messages.commands;
+                        isTextCommand = true;
+                        break;
+
+                    case "версия":
+                        message = Messages.version;
+                        isTextCommand = true;
+                        break;
+                    default:
+                        isCommand = false;
+                        bot.Messages.Send(new VkNet.Model.RequestParams.MessagesSendParams
+                        {
+                            Keyboard = Keyboard.MessageKeyboard,
+                            UserId = id,
+                            RandomId = (int)DateTime.UtcNow.Ticks,
+                            Message = "😅 Не знаю такой команды хозяин...\nВведи «команды» или воспользуйся кнопками 🐾"
+                        });
+                        break;
+                }
         }
     }
 }
