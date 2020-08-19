@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using VkNet;
@@ -49,7 +50,9 @@ namespace Neko
         {
             List<VkNet.Model.Attachments.MediaAttachment> attachement = new List<VkNet.Model.Attachments.MediaAttachment>();
             VkNet.Enums.Filters.Settings
-            scope = VkNet.Enums.Filters.Settings.Photos | VkNet.Enums.Filters.Settings.Video | VkNet.Enums.Filters.Settings.Documents | VkNet.Enums.Filters.Settings.Groups;
+            scope = VkNet.Enums.Filters.Settings.Photos | VkNet.Enums.Filters.Settings.Video | VkNet.Enums.Filters.Settings.Documents |
+
+VkNet.Enums.Filters.Settings.Groups;
             scope |= VkNet.Enums.Filters.Settings.Offline;
             while (!vk.IsAuthorized)
             {
@@ -133,7 +136,7 @@ namespace Neko
                                         GroupId = grupid.ToString()
                                     });
 
-                                    foreach(var item in members)
+                                    foreach (var item in members)
                                         if (bot.Messages.IsMessagesFromGroupAllowed((ulong)grupid, (ulong)members[i].Id))
                                         {
                                             bot.Messages.Send(new MessagesSendParams
@@ -266,106 +269,123 @@ namespace Neko
         static void GetTypeAndDbCnt(long? id)
         {
             bool isMat = false;
-            foreach(var item in Messages.matList)
-                if(message.Contains(item))
+            Regex regex = new Regex(Messages.blackListWords);
+            MatchCollection matchesBlack = regex.Matches(message);
+
+            regex = new Regex(Messages.whiteListWords);
+            MatchCollection matchesWhite = regex.Matches(message);
+            if (matchesBlack.Count > 0 && matchesWhite.Count == 0)
+            {
+                message = Messages.suka;
+                isTextCommand = true;
+                isMat = true;
+            }
+
+            if (!isMat)
+            {
+                if (isHellowCommand())
                 {
-                    message = Messages.suka;
+                    Random rnd = new Random();
+                    List<long> tmp = new List<long>();
+                    tmp.Add((long)id);
+                    var user = bot.Users.Get(tmp, VkNet.Enums.Filters.ProfileFields.Sex);
+                    if (user[0].Sex == VkNet.Enums.Sex.Female)
+                        message = Messages.hellowList[rnd.Next(Messages.hellowList.Count)] + " дорогая";
+                    else
+                        message = Messages.hellowList[rnd.Next(Messages.hellowList.Count)] + " дорогой";
                     isTextCommand = true;
-                    isMat = true;
                 }
-            
-            if(!isMat)
-                switch (message)
-                {
-                    case "рассылка":
-                        Type = 100;
-                        message = Messages.rass;
-                        isTextCommand = true;
-                        break;
+                else
+                    switch (message)
+                    {
+                        case "рассылка":
+                            Type = 100;
+                            message = Messages.rass;
+                            isTextCommand = true;
+                            break;
 
-                    case "неко":
-                        Type = 0;
-                        dbCnt = 1;
-                        break;
+                        case "неко":
+                            Type = 0;
+                            dbCnt = 1;
+                            break;
 
-                    case "неко+":
-                        Type = 1;
-                        dbCnt = 5;
-                        break;
+                        case "неко+":
+                            Type = 1;
+                            dbCnt = 5;
+                            break;
 
-                    case "некололи":
-                        Type = 2;
-                        dbCnt = 2;
-                        break;
+                        case "некололи":
+                            Type = 2;
+                            dbCnt = 2;
+                            break;
 
-                    case "некололи+":
-                        Type = 3;
-                        dbCnt = 6;
-                        break;
+                        case "некололи+":
+                            Type = 3;
+                            dbCnt = 6;
+                            break;
 
-                    case "некочиби":
-                        Type = 4;
-                        dbCnt = 4;
-                        break;
+                        case "некочиби":
+                            Type = 4;
+                            dbCnt = 4;
+                            break;
 
-                    case "нековидео":
-                        Type = 6;
-                        dbCnt = 7;
-                        break;
+                        case "нековидео":
+                            Type = 6;
+                            dbCnt = 7;
+                            break;
 
-                    case "некогиф":
-                        Type = 5;
-                        dbCnt = 3;
-                        break;
-
-                    case "привет":
-                        Random rnd = new Random();
-                        List<long> tmp = new List<long>();
-                        tmp.Add((long)id);
-                        var user = bot.Users.Get(tmp, VkNet.Enums.Filters.ProfileFields.Sex);
-                        if (user[0].Sex == VkNet.Enums.Sex.Female)
-                            message = Messages.hellowList[rnd.Next(Messages.hellowList.Count)] + " дорогая";
-                        else
-                            message = Messages.hellowList[rnd.Next(Messages.hellowList.Count)] + " дорогой";
-                        isTextCommand = true;
-                        break;
+                        case "некогиф":
+                            Type = 5;
+                            dbCnt = 3;
+                            break;
 
 
-                    case "команды":
-                        message = Messages.commands;
-                        isTextCommand = true;
-                        break;
 
-                    case "команда":
-                        message = Messages.commands;
-                        isTextCommand = true;
-                        break;
+                        case "команды":
+                            message = Messages.commands;
+                            isTextCommand = true;
+                            break;
 
-                    case "помощь":
-                        message = Messages.commands;
-                        isTextCommand = true;
-                        break;
+                        case "команда":
+                            message = Messages.commands;
+                            isTextCommand = true;
+                            break;
 
-                    case "help":
-                        message = Messages.commands;
-                        isTextCommand = true;
-                        break;
+                        case "помощь":
+                            message = Messages.commands;
+                            isTextCommand = true;
+                            break;
 
-                    case "версия":
-                        message = Messages.version;
-                        isTextCommand = true;
-                        break;
-                    default:
-                        isCommand = false;
-                        bot.Messages.Send(new VkNet.Model.RequestParams.MessagesSendParams
-                        {
-                            Keyboard = Keyboard.MessageKeyboard,
-                            UserId = id,
-                            RandomId = (int)DateTime.UtcNow.Ticks,
-                            Message = "😅 Не знаю такой команды хозяин...\nВведи «команды» или воспользуйся кнопками 🐾"
-                        });
-                        break;
-                }
+                        case "help":
+                            message = Messages.commands;
+                            isTextCommand = true;
+                            break;
+
+                        case "версия":
+                            message = Messages.version;
+                            isTextCommand = true;
+                            break;
+                        default:
+                            isCommand = false;
+                            bot.Messages.Send(new VkNet.Model.RequestParams.MessagesSendParams
+                            {
+                                Keyboard = Keyboard.MessageKeyboard,
+                                UserId = id,
+                                RandomId = (int)DateTime.UtcNow.Ticks,
+                                Message = "😅 Не знаю такой команды хозяин...\nВведи «команды» или воспользуйся кнопками 🐾"
+                            });
+                            break;
+                    }
+            }
+        }
+
+        static bool isHellowCommand()
+        {
+            foreach (var item in Messages.hellowCommand)
+                if (item.Contains(message))
+                    return true;
+
+            return false;
         }
     }
 }
