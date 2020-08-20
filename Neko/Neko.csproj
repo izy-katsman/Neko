@@ -65,6 +65,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="BD\Database.cs" />
+    <Compile Include="Commands.cs" />
     <Compile Include="Keyboard.cs" />
     <Compile Include="Messages.cs" />
     <Compile Include="Program.cs" />
